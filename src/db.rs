@@ -3,6 +3,7 @@ use dotenvy::dotenv;
 use std::env;
 use std::sync::Arc;
 
+
 #[derive(Clone)]
 pub struct Database {
     pool: Arc<Pool>,
