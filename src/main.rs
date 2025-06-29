@@ -14,6 +14,7 @@ async fn hello() -> &'static str {
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt().init();
+
     let db = match Database::new() {
         Ok(db) => db,
         Err(e) => {
@@ -21,6 +22,7 @@ async fn main() {
             std::process::exit(1);
         }
     };
+
     let cors = Cors::new()
         .allow_origin(["http://localhost:3000", "http://127.0.0.1:3000"])
         .allow_methods(vec![
@@ -39,6 +41,15 @@ async fn main() {
         Router::with_path("api")
             .push(Router::with_path("login").post(get_login))
             .push(Router::with_path("register").post(get_register))
+            .push(
+                Router::with_path("students")
+                    .get(get_students)
+                    .push(Router::with_path("{id}")
+                        .get(get_student)
+                        .push(Router::with_path("scores").get(get_scores))
+                    ),
+            )
+            .push(Router::with_path("courses").get(get_courses))
     );
     println!("{:?}", router);
     let service = Service::new(router).hoop(cors);
