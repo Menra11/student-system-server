@@ -1,4 +1,3 @@
-use crate::db::Database;
 use crate::model::*;
 use jsonwebtoken::{self, EncodingKey};
 use mysql::prelude::*;
@@ -9,7 +8,8 @@ use time::{Duration, OffsetDateTime};
 
 #[handler]
 pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response) {
-    let db = depot.obtain::<Database>().expect("get db fail");
+    
+    let db = depot.obtain::<crate::db::Database>().expect("get db fail");
     let mut conn = db.get_connection().await.unwrap();
 
     let login_data: LoginDataRequest<LoginData> = req

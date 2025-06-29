@@ -35,10 +35,11 @@ async fn main() {
 
     let acceptor = TcpListener::new("127.0.0.1:5800").bind().await;
 
-    let router = Router::new()
-        .hoop(affix_state::inject(db))
-        .get(hello)
-        .push(Router::with_path("api").push(Router::with_path("login").post(get_login)));
+    let router = Router::new().hoop(affix_state::inject(db)).get(hello).push(
+        Router::with_path("api")
+            .push(Router::with_path("login").post(get_login))
+            .push(Router::with_path("register").post(get_register))
+    );
     println!("{:?}", router);
     let service = Service::new(router).hoop(cors);
     Server::new(acceptor).serve(service).await;
