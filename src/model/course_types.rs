@@ -20,4 +20,15 @@ pub struct CourseResponse {
 }
 
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoursesId {
+    pub courses_id: Vec<u32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoursesSelectResponse {
+    pub success: bool,
+    pub message: Option<String>,
+}
+
 

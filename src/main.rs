@@ -42,14 +42,22 @@ async fn main() {
             .push(Router::with_path("login").post(get_login))
             .push(Router::with_path("register").post(get_register))
             .push(
-                Router::with_path("students")
-                    .get(get_students)
-                    .push(Router::with_path("{id}")
+                Router::with_path("student").get(get_students).push(
+                    Router::with_path("{id}")
                         .get(get_student)
                         .push(Router::with_path("scores").get(get_scores))
-                    ),
+                        .push(Router::with_path("courses_select").post(post_courses))
+                        .push(
+                            Router::with_path("video")
+                                .push(Router::with_path("{video_id}")
+                                    .get(get_video)
+                                    .post(post_video)
+                            ),
+                        ),
+                ),
             )
             .push(Router::with_path("courses").get(get_courses))
+            .push(Router::with_path("teachers").get(get_teachers)),
     );
     println!("{:?}", router);
     let service = Service::new(router).hoop(cors);
