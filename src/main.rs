@@ -51,7 +51,7 @@ async fn main() {
                             Router::with_path("video")
                                 .push(Router::with_path("{video_id}")
                                     .get(get_video)
-                                    .post(post_video)
+                                    .put(put_video)
                             ),
                         ),
                 ),

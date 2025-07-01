@@ -2,37 +2,44 @@ use serde ::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Video {
-    video_id:         u32,
-    video_title:      String,
-    video_description:String,
-    video_url:        String,
-    video_duration:   u32,
-    teacher_name:     String,
-    course_name:      String,
-    completed:        Option<bool>,
+    pub video_id:         u32,
+    pub video_title:      Option<String>,
+    pub video_description:Option<String>,
+    pub video_url:        Option<String>,
+    pub video_duration:   Option<u32>,
+    pub teacher_name:     Option<String>,
+    pub course_name:      Option<String>,
+    pub completed:        Option<bool>,
 }
+    
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Progress {
-    progress_id:      u32,
-    student_id:       u32,
-    video_id:         u32,
-    progress:         u32,
-    completed:        bool,
+    pub progress_id:      u32,
+    pub student_id:       u32,
+    pub video_id:         u32,
+    pub progress:         f32,
+    pub completed:        bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProgressRequest { 
+    pub completed:        u32,
+    pub progress:         f32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VideoResponse {
-    pub success       : bool,
-    pub message       : Option<String>,
-    pub video         : Option<Video>,
-    pub progress      : Option<Progress>,
+    pub success          : bool,
+    pub message          : Option<String>,
+    pub video            : Option<Video>,
+    pub progress         : Option<Progress>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct  VideosResponse {
-    pub success       : bool,
-    pub message       : Option<String>,
-    pub videos        : Option<Vec<Video>>,
-    pub progress      : Option<Vec<Progress>>,
+    pub success         : bool,
+    pub message         : Option<String>,
+    pub videos          : Option<Vec<Video>>,
+    pub progresses        : Option<Vec<Progress>>,
 }
