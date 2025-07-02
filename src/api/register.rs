@@ -1,5 +1,6 @@
 use crate::model::*;
-use mysql::prelude::*;
+use bcrypt::DEFAULT_COST;
+use mysql::{prelude::*, *};
 use salvo::prelude::*;
 
 #[handler]
@@ -11,20 +12,36 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
         .parse_json::<RegisterDataRequest<RegisterData>>()
         .await
         .unwrap();
-      
-    let sid = &register_data.user_from.student_id.unwrap();
-    let sname = &register_data.user_from.student_name.unwrap();
-    let sgender = &register_data.user_from.gender.unwrap();
-    let sdate = &register_data.user_from.birth_date.unwrap();
-    let cid = &register_data.user_from.class_id.unwrap();
-    let phone = &register_data.user_from.phone.unwrap();
-    let email = &register_data.user_from.email.unwrap();
-    let password = &register_data.user_from.password.unwrap();
 
-    let query = format!("insert into Student (student_id,student_name,gender,birth_date,class_id,phone,email,password) 
-    VALUES({sid},'{sname}','{sgender}','{sdate}',{cid},'{phone}','{email}','{password}');");
+    let RegisterData {
+        student_id,
+        student_name,
+        gender,
+        birth_date,
+        class_id,
+        phone,
+        email,
+        password,
+    } = &register_data.user_from;
 
-    match query.run(&mut conn) {
+    let password_hash = bcrypt::hash(password.clone().unwrap(), DEFAULT_COST).unwrap();
+
+    let query = "INSERT INTO Student (student_id, student_name, gender, birth_date, class_id, phone, email, password_hash) 
+             VALUES (:sid, :sname, :sgender, :sdate, :cid, :phone, :email, :password_hash)";
+
+    match conn.exec_drop(
+        query,
+        params! {
+            "sid" => student_id,
+            "sname" => student_name,
+            "sgender" => gender,
+            "sdate" => birth_date,
+            "cid" => class_id,
+            "phone" => phone,
+            "email" => email,
+            "password_hash" => password_hash,
+        },
+    ) {
         Ok(_) => {
             res.render(Json(RegisterResponse {
                 success: true,
@@ -32,7 +49,7 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
             }));
         }
         Err(e) => {
-          println!("{}", e);
+            println!("{}", e);
             res.render(Json(RegisterResponse {
                 success: false,
                 message: Some("注册失败".to_string()),

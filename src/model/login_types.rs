@@ -10,21 +10,21 @@ pub struct LoginData {
 pub struct StudentLoginData {
     pub student_id: i64,
     pub student_name: String,
-    pub password: String,
+    pub password_hash: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TeacherLoginData {
     pub teacher_id: i64,
     pub teacher_name: String,
-    pub password: String,
+    pub password_hash: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AdminLoginData {
     pub admin_id: i64,
     pub admin_name: String,
-    pub password: String,
+    pub password_hash: String,
 }
 
 

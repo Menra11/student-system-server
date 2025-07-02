@@ -1,6 +1,7 @@
 use crate::model::*;
+use bcrypt::verify;
 use jsonwebtoken::{self, EncodingKey};
-use mysql::prelude::*;
+use mysql::{params, prelude::*};
 use salvo::prelude::*;
 use time::{Duration, OffsetDateTime};
 
@@ -22,7 +23,7 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
     let password = &login_data.user_from.password.unwrap();
     
     // token
-    let exp = OffsetDateTime::now_utc() + Duration::days(14);
+    let exp = OffsetDateTime::now_utc() + Duration::days(1);
     let claim = JwtClaims {
         userid: *u_id,
         usertype: user.to_string(),
@@ -35,16 +36,15 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
         &EncodingKey::from_secret(std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string()).as_bytes()),
     );
 
-    let query =
-        format!("SELECT {user}_id, {user}_name, password FROM {user} WHERE {user}_id = {u_id}");
-    // res.render(format!("{:?}", query));
+    
     match user {
         user if user == "student" => {
-            let student_data = query
-                .map(&mut conn, |(si, sn, p)| StudentLoginData {
+            let query = "SELECT student_id, student_name, password_hash FROM student WHERE student_id = :id";
+            let student_data = conn
+                .exec_map(query, params! { "id" => u_id }, |(si, sn, p)| StudentLoginData {
                     student_id: si,
                     student_name: sn,
-                    password: p,
+                    password_hash: p,
                 })
                 .unwrap();
             if student_data.len() == 0 {
@@ -52,11 +52,11 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                     success: false,
                     message: Some("用户不存在".to_string()),
                     token: None,
-                    error_code:Some("USER_NOT_FOUND".to_string()),
+                    error_code: Some("USER_NOT_FOUND".to_string()),
                 }));
                 return;
             }
-            if student_data[0].password != password.to_string() {
+            if !verify(password,student_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
@@ -84,11 +84,12 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
             }
         }
         user if user == "teacher" => {
-            let teacher_data = query
-                .map(&mut conn, |(si, sn, p)| TeacherLoginData {
+            let query = "SELECT teacher_id, teacher_name, password_hash FROM teacher WHERE teacher_id = :id";
+            let teacher_data = conn
+                .exec_map(query, params! { "id" => u_id} , |(si, sn, p)| TeacherLoginData {
                     teacher_id: si,
                     teacher_name: sn,
-                    password: p,
+                    password_hash: p,
                 })
                 .unwrap();
             if teacher_data.len() == 0 {
@@ -100,7 +101,7 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                 }));
                 return;
             }
-            if teacher_data[0].password != password.to_string() {
+            if !verify(password,teacher_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
@@ -128,11 +129,12 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
             }
         }
         user if user == "admin" => {
-            let admin_data = query
-                .map(&mut conn, |(si, sn, p)| AdminLoginData {
+            let query = "SELECT admin_id, admin_name, password_hash FROM admin WHERE admin_id = :id";
+            let admin_data = conn
+                .exec_map(query, params! { "id" => u_id} ,  |(si, sn, p)| AdminLoginData {
                     admin_id: si,
                     admin_name: sn,
-                    password: p,
+                    password_hash: p,
                 })
                 .unwrap();
             if admin_data.len() == 0 {
@@ -144,7 +146,7 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                 }));
                 return;
             }
-            if admin_data[0].password != password.to_string() {
+            if !verify(password,admin_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
