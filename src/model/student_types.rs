@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Student {
     pub student_id: u32,
     pub student_name: String,
-    pub gender:String,
+    pub gender: String,
     pub birth_date: String,
     pub class_id: u32,
     pub class_name: String,

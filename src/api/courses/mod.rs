@@ -2,6 +2,10 @@ use crate::model::*;
 use mysql::prelude::TextQuery;
 use salvo::prelude::*;
 
+pub mod course_id;
+
+pub use course_id::*;
+
 #[handler]
 pub async fn get_courses(depot: &mut Depot, res: &mut Response) {
     let db = depot.obtain::<crate::db::Database>().expect("get db fail");
@@ -27,13 +31,13 @@ pub async fn get_courses(depot: &mut Depot, res: &mut Response) {
         .unwrap();
 
     if courses.len() == 0 {
-        res.render(Json(CourseResponse {
+        res.render(Json(CoursesResponse {
             success: false,
             message: Some("获取课程信息失败".to_string()),
             courses: None,
         }));
     }
-    res.render(Json(CourseResponse {
+    res.render(Json(CoursesResponse {
         success: true,
         message: Some("课程信息获取成功".to_string()),
         courses: Some(courses),

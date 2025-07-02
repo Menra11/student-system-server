@@ -2,8 +2,8 @@ use crate::model::*;
 use mysql::prelude::TextQuery;
 use salvo::prelude::*;
 
-// pub mod student_id;
-// pub use student_id::*;
+pub mod teacher_id;
+pub use teacher_id::*;
 
 #[handler]
 pub async fn get_teachers(depot: &mut Depot, res: &mut Response) {

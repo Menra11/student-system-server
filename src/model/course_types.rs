@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Course {
     pub course_id:    u32,
     pub course_name:  String,
-    pub credit:       String,
+    pub credit:       u32,
     pub teacher_id:   u32,
     pub classroom:    String,
     pub schedule:     String,
@@ -14,6 +14,13 @@ pub struct Course {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CourseResponse {
+    pub success: bool,
+    pub message: Option<String>,
+    pub course: Option<Course>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoursesResponse {
     pub success: bool,
     pub message: Option<String>,
     pub courses: Option<Vec<Course>>,
