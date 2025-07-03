@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Student {
     pub student_id: u32,
@@ -15,12 +14,19 @@ pub struct Student {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Score {
-    pub score_id:       u32,
-    pub course_name:    String,
-    pub credit:         u32,
-    pub teacher_name:   String,
-    pub score:          Option<f32>,
-    pub semester:       String,
+    pub score_id: u32,
+    pub course_name: String,
+    pub credit: u32,
+    pub teacher_name: String,
+    pub score: Option<f32>,
+    pub semester: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ScoreRequest {
+    pub student_id:    u32,
+    pub course_id:  u32,
+    pub score:      f32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,5 +42,3 @@ pub struct ScoreResponse {
     pub message: Option<String>,
     pub scores: Option<Vec<Score>>,
 }
-
-

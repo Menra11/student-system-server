@@ -25,6 +25,7 @@ pub async  fn get_student_videos(req: &mut Request, depot: &mut Depot, res: &mut
         teacher_name,
         course_name,
         completed,
+        course_id:None,
       }) {
         Ok(videos) => videos,
         Err(e) => {
@@ -78,6 +79,7 @@ pub async fn get_video_and_progress(req: &mut Request, depot: &mut Depot, res: &
         teacher_name,
         course_name,
         completed: None,
+        course_id: None,
       }) {
         Ok(video) => video,
         Err(err) => {

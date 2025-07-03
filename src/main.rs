@@ -44,14 +44,29 @@ async fn main() {
             .push(Router::with_path("courses").get(get_courses))
             .push(Router::with_path("teachers").get(get_teachers))
             .push(Router::with_path("students").get(get_students))
+            .push(Router::with_path("videos").get(get_videos))
+            .push(
+                Router::with_path("video_file")
+                    .post(upload_video_file)
+                    .delete(del_video_file),
+            )
             .push(
                 Router::with_path("teacher").push(
                     Router::with_path("{id}")
                         .get(get_teacher)
+                        .post(add_score)
                         .push(Router::with_path("courses_info").get(get_courses_info))
                         .push(Router::with_path("students_info").get(get_students_info))
                         .push(Router::with_path("videos_info").get(get_videos_info))
                         .push(Router::with_path("course_videos").get(get_course_videos)),
+                ),
+            )
+            .push(
+                Router::with_path("video").post(add_video).push(
+                    Router::with_path("{id}")
+                        .get(get_video)
+                        .put(put_video)
+                        .delete(del_video),
                 ),
             )
             .push(

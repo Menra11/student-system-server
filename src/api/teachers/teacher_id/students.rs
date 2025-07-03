@@ -52,3 +52,30 @@ where t.teacher_id = :id;";
 
     // res.render(format!("get_student:{:?}",id));
 }
+
+#[handler]
+pub async fn add_score(req: &mut Request, depot: &mut Depot, res: &mut Response) {
+    let db = depot.obtain::<crate::db::Database>().expect("get db fail");
+    let mut conn = db.get_connection().await.unwrap();
+
+    let ScoreRequest {
+        student_id,
+        course_id,
+        score,
+    } = req.parse_json::<ScoreRequest>().await.unwrap();
+    let query = "UPDATE score SET score = :score WHERE student_id = :student_id AND course_id = :course_id";
+    match conn.exec_drop(query, params!{"student_id" => student_id, "course_id" => course_id, "score" => score}) {
+        Ok(_) => {
+            res.render(Json(RegisterResponse {
+                success: true,
+                message: Some("添加成功".to_string()),
+            }));
+        }
+        Err(e) => {
+            res.render(Json(RegisterResponse {
+                success: true,
+                message: Some(format!("添加失败：{}",e)),
+            }));
+        }
+    }
+}
