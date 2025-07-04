@@ -15,7 +15,7 @@ async fn hello() -> &'static str {
 async fn main() {
     tracing_subscriber::fmt().init();
 
-    let db = match Database::new() {
+    let db = match Database::new().await {
         Ok(db) => db,
         Err(e) => {
             eprintln!("❌ 数据库连接失败: {}", e);
@@ -37,7 +37,7 @@ async fn main() {
 
     let acceptor = TcpListener::new("127.0.0.1:5800").bind().await;
 
-    let router = Router::new().hoop(affix_state::inject(db)).get(hello).push(
+    let router = Router::new().hoop(affix_state::inject(db.clone())).get(hello).push(
         Router::with_path("api")
             .push(Router::with_path("login").post(get_login))
             .push(Router::with_path("register").post(get_register))

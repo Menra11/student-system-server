@@ -1,17 +1,14 @@
 use crate::model::*;
 use bcrypt::verify;
 use jsonwebtoken::{self, EncodingKey};
-use mysql::{params, prelude::*};
 use salvo::prelude::*;
+use sqlx::Row; // 添加 sqlx 相关的导入
 use time::{Duration, OffsetDateTime};
-
-
 
 #[handler]
 pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response) {
-    
     let db = depot.obtain::<crate::db::Database>().expect("get db fail");
-    let mut conn = db.get_connection().await.unwrap();
+    let mut conn = db.get_connection().await.expect("Failed to get database connection");
 
     let login_data: LoginDataRequest<LoginData> = req
         .parse_json::<LoginDataRequest<LoginData>>()
@@ -29,41 +26,63 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
         usertype: user.to_string(),
         exp: exp.unix_timestamp(),
     };
+    
     dotenvy::dotenv().ok();
+    let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
     let token = jsonwebtoken::encode(
         &jsonwebtoken::Header::default(),
         &claim,
-        &EncodingKey::from_secret(std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string()).as_bytes()),
+        &EncodingKey::from_secret(secret.as_bytes()),
     );
 
-    
-    match user {
-        user if user == "student" => {
-            let query = "SELECT student_id, student_name, password_hash FROM student WHERE student_id = :id";
-            let student_data = conn
-                .exec_map(query, params! { "id" => u_id }, |(si, sn, p)| StudentLoginData {
-                    student_id: si,
-                    student_name: sn,
-                    password_hash: p,
-                })
-                .unwrap();
-            if student_data.len() == 0 {
-                res.render(Json(LoginResponse {
-                    success: false,
-                    message: Some("用户不存在".to_string()),
-                    token: None,
-                    error_code: Some("USER_NOT_FOUND".to_string()),
-                }));
-                return;
-            }
-            if !verify(password,student_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
+    // 处理用户登录请求
+    match user.as_str() {
+        "student" => {
+            let query = "SELECT student_id, student_name, password_hash FROM student WHERE student_id = ?";
+            
+            // 使用 sqlx 查询数据库
+            let row = match sqlx::query(query)
+                .bind(u_id)
+                .fetch_optional(&mut *conn)
+                .await
+            {
+                Ok(Some(row)) => row,
+                Ok(None) => {
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("用户不存在".to_string()),
+                        token: None,
+                        error_code: Some("USER_NOT_FOUND".to_string()),
+                    }));
+                    return;
+                }
+                Err(e) => {
+                    eprintln!("数据库查询错误: {:?}", e);
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("服务器内部错误".to_string()),
+                        token: None,
+                        error_code: Some("DATABASE_ERROR".to_string()),
+                    }));
+                    return;
+                }
+            };
+            
+            let password_hash: String = row.get("password_hash");
+            
+            // 验证密码
+            if !verify(password, &password_hash).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
                     token: None,
                     error_code: Some("INVALID_CREDENTIALS".to_string()),
                 }));
+                return;
             }
+            
+            // 返回登录成功的响应
             match token {
                 Ok(token) => {
                     res.render(Json(LoginResponse {
@@ -74,41 +93,59 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                     }));
                 }
                 Err(err) => {
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
                     res.render(Json(LoginResponse {
                         success: false,
                         message: Some(format!("token获取失败:{:?}", err).to_string()),
                         token: None,
-                        error_code: Some("1002".to_string()),
+                        error_code: Some("TOKEN_GENERATION_ERROR".to_string()),
                     }));
                 }
             }
         }
-        user if user == "teacher" => {
-            let query = "SELECT teacher_id, teacher_name, password_hash FROM teacher WHERE teacher_id = :id";
-            let teacher_data = conn
-                .exec_map(query, params! { "id" => u_id} , |(si, sn, p)| TeacherLoginData {
-                    teacher_id: si,
-                    teacher_name: sn,
-                    password_hash: p,
-                })
-                .unwrap();
-            if teacher_data.len() == 0 {
-                res.render(Json(LoginResponse {
-                    success: false,
-                    message: Some("用户不存在".to_string()),
-                    token: None,
-                    error_code: Some("USER_NOT_FOUND".to_string()),
-                }));
-                return;
-            }
-            if !verify(password,teacher_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
+        "teacher" => {
+            let query = "SELECT teacher_id, teacher_name, password_hash FROM teacher WHERE teacher_id = ?";
+            
+            let row = match sqlx::query(query)
+                .bind(u_id)
+                .fetch_optional(&mut *conn)
+                .await
+            {
+                Ok(Some(row)) => row,
+                Ok(None) => {
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("用户不存在".to_string()),
+                        token: None,
+                        error_code: Some("USER_NOT_FOUND".to_string()),
+                    }));
+                    return;
+                }
+                Err(e) => {
+                    eprintln!("数据库查询错误: {:?}", e);
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("服务器内部错误".to_string()),
+                        token: None,
+                        error_code: Some("DATABASE_ERROR".to_string()),
+                    }));
+                    return;
+                }
+            };
+            
+            let password_hash: String = row.get("password_hash");
+            
+            if !verify(password, &password_hash).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
                     token: None,
                     error_code: Some("INVALID_CREDENTIALS".to_string()),
                 }));
+                return;
             }
+            
             match token {
                 Ok(token) => {
                     res.render(Json(LoginResponse {
@@ -119,41 +156,59 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                     }));
                 }
                 Err(err) => {
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
                     res.render(Json(LoginResponse {
                         success: false,
                         message: Some(format!("token获取失败:{:?}", err).to_string()),
                         token: None,
-                        error_code: Some("1002".to_string()),
+                        error_code: Some("TOKEN_GENERATION_ERROR".to_string()),
                     }));
                 }
             }
         }
-        user if user == "admin" => {
-            let query = "SELECT admin_id, admin_name, password_hash FROM admin WHERE admin_id = :id";
-            let admin_data = conn
-                .exec_map(query, params! { "id" => u_id} ,  |(si, sn, p)| AdminLoginData {
-                    admin_id: si,
-                    admin_name: sn,
-                    password_hash: p,
-                })
-                .unwrap();
-            if admin_data.len() == 0 {
-                res.render(Json(LoginResponse {
-                    success: false,
-                    message: Some("用户不存在".to_string()),
-                    token: None,
-                    error_code: Some("USER_NOT_FOUND".to_string()),
-                }));
-                return;
-            }
-            if !verify(password,admin_data.into_iter().next().unwrap().password_hash.as_str()).unwrap_or(false) {
+        "admin" => {
+            let query = "SELECT admin_id, admin_name, password_hash FROM admin WHERE admin_id = ?";
+            
+            let row = match sqlx::query(query)
+                .bind(u_id)
+                .fetch_optional(&mut *conn)
+                .await
+            {
+                Ok(Some(row)) => row,
+                Ok(None) => {
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("用户不存在".to_string()),
+                        token: None,
+                        error_code: Some("USER_NOT_FOUND".to_string()),
+                    }));
+                    return;
+                }
+                Err(e) => {
+                    eprintln!("数据库查询错误: {:?}", e);
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                    res.render(Json(LoginResponse {
+                        success: false,
+                        message: Some("服务器内部错误".to_string()),
+                        token: None,
+                        error_code: Some("DATABASE_ERROR".to_string()),
+                    }));
+                    return;
+                }
+            };
+            
+            let password_hash: String = row.get("password_hash");
+            
+            if !verify(password, &password_hash).unwrap_or(false) {
                 res.render(Json(LoginResponse {
                     success: false,
                     message: Some("密码错误".to_string()),
                     token: None,
                     error_code: Some("INVALID_CREDENTIALS".to_string()),
                 }));
+                return;
             }
+            
             match token {
                 Ok(token) => {
                     res.render(Json(LoginResponse {
@@ -164,22 +219,23 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
                     }));
                 }
                 Err(err) => {
+                    res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
                     res.render(Json(LoginResponse {
                         success: false,
                         message: Some(format!("token获取失败:{:?}", err).to_string()),
                         token: None,
-                        error_code: Some("1002".to_string()),
+                        error_code: Some("TOKEN_GENERATION_ERROR".to_string()),
                     }));
                 }
             }
         }
         _ => {
-            res.render(format!("error"));
+            res.status_code(StatusCode::BAD_REQUEST);
             res.render(Json(LoginResponse {
                 success: false,
-                message: Some("用户获取失败".to_string()),
+                message: Some("无效的用户类型".to_string()),
                 token: None,
-                error_code: Some("1002".to_string()),
+                error_code: Some("INVALID_USER_TYPE".to_string()),
             }));
         }
     }
