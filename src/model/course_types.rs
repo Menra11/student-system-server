@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Course {
-    pub course_id:    u32,
+    pub course_id:    i32,
     pub course_name:  String,
-    pub credit:       u32,
-    pub teacher_id:   u32,
+    pub credit:       i32,
+    pub teacher_id:   i32,
     pub classroom:    String,
     pub schedule:     String,
     pub description:  String,
@@ -29,7 +29,7 @@ pub struct CoursesResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CoursesId {
-    pub courses_id: Vec<u32>,
+    pub courses_id: Vec<i32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

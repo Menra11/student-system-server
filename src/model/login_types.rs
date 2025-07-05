@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginData {
-  pub user_id: Option<u32>,
+  pub user_id: Option<i32>,
   pub password: Option<String>,
   pub user: Option<String>,
 }
@@ -30,7 +30,7 @@ pub struct AdminLoginData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JwtClaims {
-    pub userid: u32,
+    pub userid: i32,
     pub usertype: String,
     pub exp: i64,
 }

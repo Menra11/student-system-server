@@ -1,12 +1,12 @@
 use serde ::{Deserialize, Serialize};
-
+use chrono::NaiveDate;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Teacher {
-    pub teacher_id    :u32,
+    pub teacher_id    :i32,
     pub teacher_name  :String,
     pub gender        :Option<String>,
     pub title         :Option<String>,
-    pub birth_date    :Option<String>,
+    pub birth_date    :Option<NaiveDate>,
     pub phone         :Option<String>,
     pub email         :Option<String>,
 }
@@ -27,7 +27,7 @@ pub struct  TeachersResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StudentsInfo {
-    pub student_id    :u32,
+    pub student_id    :i32,
     pub student_name  :String,
     pub class_name    :String,
     pub course_name   :String,
@@ -42,9 +42,9 @@ pub struct StudentsInfoResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CoursesInfo {
-    pub course_id:    u32,
+    pub course_id:    i32,
     pub course_name:  String,
-    pub credit:       u32,
+    pub credit:       i32,
     pub classroom:    String,
     pub schedule:     String,
     pub description:  String,
@@ -59,12 +59,12 @@ pub struct CoursesInfoResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VideosInfo {
-    pub student_id:    Option<u32>,
+    pub student_id:    Option<i32>,
     pub student_name:  Option<String>,
-    pub course_id:     Option<u32>,
+    pub course_id:     Option<i32>,
     pub course_name:   Option<String>,
     pub video_title:   Option<String>,
-    pub video_duration:Option<u32>,
+    pub video_duration:Option<i32>,
     pub progress:      Option<f32>,
     pub completed:     Option<bool>,
     pub score:         Option<f32>,
@@ -79,12 +79,12 @@ pub struct VideosInfoResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CourseVideos {
-    pub video_id:           u32,
+    pub video_id:           i32,
     pub video_title:        Option<String>,
     pub video_description:  Option<String>,
     pub video_url:          Option<String>,
-    pub video_duration:     Option<u32>,
-    pub course_id:          u32,
+    pub video_duration:     Option<i32>,
+    pub course_id:          i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
