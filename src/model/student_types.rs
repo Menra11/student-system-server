@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Student {
-    pub student_id: i32,
-    pub student_name: String,
-    pub gender: String,
-    pub birth_date: NaiveDate,
-    pub class_id: i32,
-    pub class_name: String,
-    pub phone: String,
-    pub email: String,
+    pub student_id:     i32,
+    pub student_name:   String,
+    pub gender:         String,
+    pub birth_date:     NaiveDate,
+    pub class_id:       i32,
+    pub class_name:     String,
+    pub phone:          String,
+    pub email:          String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

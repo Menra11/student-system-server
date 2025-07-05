@@ -74,6 +74,8 @@ async fn main() {
                 Router::with_path("student").push(
                     Router::with_path("{id}")
                         .get(get_student)
+                        .put(put_student)
+                        .delete(del_student)
                         .push(Router::with_path("scores").get(get_scores))
                         .push(Router::with_path("courses_select").post(post_courses))
                         .push(Router::with_path("videos").get(get_student_videos))
