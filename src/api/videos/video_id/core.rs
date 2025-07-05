@@ -1,6 +1,6 @@
 use crate::model::*;
 use salvo::prelude::*;
-use sqlx::Row;
+use sqlx::{Acquire, Row};
 
 #[handler]
 pub async fn get_video(req: &mut Request, depot: &mut Depot, res: &mut Response) {
@@ -153,6 +153,18 @@ pub async fn add_video(req: &mut Request, depot: &mut Depot, res: &mut Response)
         course_id,
     } = video_data;
 
+    // 使用事务确保所有操作原子性
+    let mut tx = match conn.begin().await {
+        Ok(tx) => tx,
+        Err(e) => {
+            res.render(Json(RegisterResponse {
+                success: false,
+                message: Some(format!("事务启动失败: {}", e)),
+            }));
+            return;
+        }
+    };
+
     let query = "INSERT INTO video 
                 (video_title, video_description, video_url, video_duration, course_id)
                 VALUES (?, ?, ?, ?, ?)";
@@ -163,33 +175,92 @@ pub async fn add_video(req: &mut Request, depot: &mut Depot, res: &mut Response)
         .bind(video_url)
         .bind(video_duration)
         .bind(course_id)
-        .execute(&mut *conn)
+        .execute(&mut *tx)
         .await
     {
-        Ok(result) => {
-            if result.rows_affected() > 0 {
-                res.render(Json(RegisterResponse {
-                    success: true,
-                    message: Some("添加成功".to_string()),
-                }));
-            } else {
-                res.render(Json(RegisterResponse {
-                    success: false,
-                    message: Some("添加失败，未添加任何记录".to_string()),
-                }));
-            }
-        }
+        Ok(_) => {}
         Err(e) => {
+            let _ = tx.rollback().await;
             let message = match &e {
                 sqlx::Error::Database(err) if err.is_foreign_key_violation() => {
                     "课程ID不存在".to_string()
                 }
                 _ => format!("数据库错误: {}", e),
             };
-
             res.render(Json(RegisterResponse {
                 success: false,
                 message: Some(message),
+            }));
+            return;
+        }
+    }
+    let s_query = "select s.student_id, v.video_id
+        from  video v
+        left join score s on s.course_id = v.course_id
+        where s.course_id = ?";
+
+    let rows = match sqlx::query(s_query)
+        .bind(course_id)
+        .fetch_all(&mut *tx)
+        .await
+    {
+        Ok(rows) => {
+           rows
+        }
+        Err(err) => {
+            let _ = tx.rollback().await;
+            res.render(Json(RegisterResponse {
+                success: false,
+                message: Some(format!("更新学生成绩失败: {}", err)),
+            }));
+            return ;
+        }
+    };
+
+    let mut error_occurred = false;
+    let mut error_message = String::new();
+
+    for row in rows {
+        let student_id = row.get::<i64, _>("student_id");
+        let video_id = row.get::<i64, _>("video_id");
+        let sc_query = "INSERT INTO student_video_progress (student_id, video_id, progress, completed) 
+                        VALUES (?, ?, 0, 0)
+                        ON DUPLICATE KEY UPDATE progress = VALUES(progress), completed = VALUES(completed)";
+        
+        if let Err(err) = sqlx::query(sc_query)
+            .bind(student_id)
+            .bind(video_id)
+            .execute(&mut *tx)
+            .await
+        {
+            error_occurred = true;
+            error_message = format!("更新学生成绩失败: {}", err);
+            break;
+        }
+    }
+
+    if error_occurred {
+        let _ = tx.rollback().await;
+        res.render(Json(RegisterResponse {
+            success: false,
+            message: Some(error_message),
+        }));
+        return;
+    }
+
+
+    // 提交事务
+    match tx.commit().await {
+        Ok(_) => {
+            res.render(Json(RegisterResponse {
+                success: true,
+                message: Some("选课成功".to_string()),
+            }));
+        }
+        Err(e) => {
+            res.render(Json(RegisterResponse {
+                success: false,
+                message: Some(format!("事务提交失败: {}", e)),
             }));
         }
     }

@@ -58,23 +58,19 @@ pub struct CoursesInfoResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VideosInfo {
+pub struct ScoreInfo {
     pub student_id:    Option<i32>,
     pub student_name:  Option<String>,
     pub course_id:     Option<i32>,
     pub course_name:   Option<String>,
-    pub video_title:   Option<String>,
-    pub video_duration:Option<i32>,
-    pub progress:      Option<f32>,
-    pub completed:     Option<bool>,
     pub score:         Option<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VideosInfoResponse {
+pub struct ScoresInfoResponse {
     pub success       : bool,
     pub message       : Option<String>,
-    pub videos_info   : Option<Vec<VideosInfo>>,
+    pub scores_info   : Option<Vec<ScoreInfo>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

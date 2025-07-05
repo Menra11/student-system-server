@@ -57,7 +57,7 @@ async fn main() {
                         .post(add_score)
                         .push(Router::with_path("courses_info").get(get_courses_info))
                         .push(Router::with_path("students_info").get(get_students_info))
-                        .push(Router::with_path("videos_info").get(get_videos_info))
+                        .push(Router::with_path("scores_info").get(get_scores_info))
                         .push(Router::with_path("course_videos").get(get_course_videos)),
                 ),
             )

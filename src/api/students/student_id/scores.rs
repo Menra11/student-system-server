@@ -9,7 +9,7 @@ pub async fn get_scores(req: &mut Request, depot: &mut Depot, res: &mut Response
 
     let id = req.param::<i64>("id").unwrap();
 
-    let query = "SELECT sc.score_id, c.course_name, c.credit, t.teacher_name, sc.score, sc.semester
+    let query = "SELECT sc.score_id, c.course_name, c.credit, t.teacher_name, CAST(sc.score AS FLOAT) AS score_f32 , sc.semester
                 FROM Score sc
                 JOIN Course c ON sc.course_id = c.course_id
                 JOIN Teacher t ON c.teacher_id = t.teacher_id
@@ -28,7 +28,7 @@ pub async fn get_scores(req: &mut Request, depot: &mut Depot, res: &mut Response
                     course_name: row.get("course_name"),
                     credit: row.get("credit"),
                     teacher_name: row.get("teacher_name"),
-                    score: row.get("score"),
+                    score: row.get("score_f32"),
                     semester: row.get("semester"),
                 }
             }).collect();

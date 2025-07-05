@@ -63,7 +63,6 @@ pub async fn post_courses(req: &mut Request, depot: &mut Depot, res: &mut Respon
                 for row in rows {
                     let video_id: i64 = row.get("video_id");
                     
-                    // 修复：使用更安全的 ON DUPLICATE KEY UPDATE 语法
                     match sqlx::query(
                         "INSERT INTO student_video_progress (student_id, video_id, progress, completed) 
                          VALUES (?, ?, 0, 0)

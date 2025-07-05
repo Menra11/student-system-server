@@ -3,21 +3,18 @@ use salvo::prelude::*;
 use sqlx::Row;
 
 #[handler]
-pub async fn get_videos_info(req: &mut Request, depot: &mut Depot, res: &mut Response) {
+pub async fn get_scores_info(req: &mut Request, depot: &mut Depot, res: &mut Response) {
     let db = depot.obtain::<crate::db::Database>().expect("get db fail");
     let mut conn = db.get_connection().await.expect("Failed to get database connection");
 
     let id = req.param::<i64>("id").unwrap();
 
     let query = 
-        "SELECT sp.student_id, s.student_name, c.course_id, c.course_name, 
-                v.video_title, v.video_duration, sp.progress, sp.completed, sc.score
+        "SELECT s.student_id, s.student_name, c.course_id, c.course_name,CAST(sc.score AS FLOAT) AS score_f32
          FROM teacher t
-         LEFT JOIN course c ON c.teacher_id = t.teacher_id 
-         LEFT JOIN video v ON v.course_id = c.course_id
-         LEFT JOIN student_video_progress sp ON sp.video_id = v.video_id
-         LEFT JOIN student s ON s.student_id = sp.student_id
-         LEFT JOIN score sc ON sc.course_id = c.course_id AND sc.student_id = sp.student_id
+         LEFT JOIN course c ON c.teacher_id = t.teacher_id
+         LEFT JOIN score sc ON sc.course_id = c.course_id
+         LEFT JOIN student s ON s.student_id = sc.student_id
          WHERE t.teacher_id = ?";
 
     match sqlx::query(query)
@@ -26,39 +23,35 @@ pub async fn get_videos_info(req: &mut Request, depot: &mut Depot, res: &mut Res
         .await
     {
         Ok(rows) => {
-            let videos_info: Vec<VideosInfo> = rows.into_iter().map(|row| {
-                VideosInfo {
+            let scores_info: Vec<ScoreInfo> = rows.into_iter().map(|row| {
+                ScoreInfo {
                     student_id: row.get("student_id"),
                     student_name: row.get("student_name"),
                     course_id: row.get("course_id"),
                     course_name: row.get("course_name"),
-                    video_title: row.get("video_title"),
-                    video_duration: row.get("video_duration"),
-                    progress: row.get("progress"),
-                    completed: row.get("completed"),
-                    score: row.get("score"),
+                    score: row.get("score_f32"),
                 }
             }).collect();
             
-            if videos_info.is_empty() {
-                res.render(Json(VideosInfoResponse {
+            if scores_info.is_empty() {
+                res.render(Json(ScoresInfoResponse {
                     success: false,
-                    message: Some("没有找到相关视频信息".to_string()),
-                    videos_info: None,
+                    message: Some("没有找到相关信息".to_string()),
+                    scores_info: None,
                 }));
             } else {
-                res.render(Json(VideosInfoResponse {
+                res.render(Json(ScoresInfoResponse {
                     success: true,
-                    message: Some("获取视频信息成功".to_string()),
-                    videos_info: Some(videos_info),
+                    message: Some("获取信息成功".to_string()),
+                    scores_info: Some(scores_info),
                 }));
             }
         }
         Err(err) => {
-            res.render(Json(VideosInfoResponse {
+            res.render(Json(ScoresInfoResponse {
                 success: false,
-                message: Some(format!("获取视频信息失败: {}", err)),
-                videos_info: None,
+                message: Some(format!("获取信息失败: {}", err)),
+                scores_info: None,
             }));
         }
     }
