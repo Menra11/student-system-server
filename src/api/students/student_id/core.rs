@@ -9,8 +9,7 @@ pub async fn get_student(req: &mut Request, depot: &mut Depot, res: &mut Respons
 
     let id = req.param::<i64>("id").unwrap();
 
-    let query = "SELECT s.student_id, s.student_name, s.gender, s.birth_date, 
-                        s.phone, s.email, s.class_id, c.class_name 
+    let query = "SELECT s.student_id, s.student_name, s.gender, s.birth_date,s.phone, s.email, s.class_id, c.class_name 
                 FROM Student s
                 LEFT JOIN Class c ON s.class_id = c.class_id
                 WHERE s.student_id = ?";

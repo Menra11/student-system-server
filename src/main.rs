@@ -45,6 +45,7 @@ async fn main() {
             .push(Router::with_path("teachers").get(get_teachers))
             .push(Router::with_path("students").get(get_students))
             .push(Router::with_path("videos").get(get_videos))
+            .push(Router::with_path("classes").get(get_classes))
             .push(
                 Router::with_path("video_file")
                     .post(upload_video_file)

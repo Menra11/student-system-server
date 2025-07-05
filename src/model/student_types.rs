@@ -38,8 +38,29 @@ pub struct StudentResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct StudentsResponse {
+    pub success: bool,
+    pub message: Option<String>,
+    pub students: Option<Vec<Student>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ScoreResponse {
     pub success: bool,
     pub message: Option<String>,
     pub scores: Option<Vec<Score>>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Class {
+    pub class_id:   i64,
+    pub class_name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClassesResponse {
+    pub success: bool,
+    pub message: Option<String>,
+    pub classes: Option<Vec<Class>>,
+}
+
