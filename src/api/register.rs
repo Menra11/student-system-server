@@ -1,12 +1,15 @@
 use crate::model::*;
 use bcrypt::DEFAULT_COST;
 use salvo::prelude::*;
-// use sqlx::MySqlConnection; 
+// use sqlx::MySqlConnection;
 
 #[handler]
 pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Response) {
     let db = depot.obtain::<crate::db::Database>().expect("get db fail");
-    let mut conn = db.get_connection().await.expect("Failed to get database connection");
+    let mut conn = db
+        .get_connection()
+        .await
+        .expect("Failed to get database connection");
 
     // 解析注册数据
     let register_data = match req.parse_json::<RegisterDataRequest<RegisterData>>().await {
@@ -36,7 +39,7 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
     let password = match password {
         Some(p) => p,
         None => {
-            res.status_code(salvo::http::StatusCode::BAD_REQUEST);
+            res.status_code(salvo::http::StatusCode::NOT_FOUND);
             res.render(Json(RegisterResponse {
                 success: false,
                 message: Some("密码不能为空".to_string()),
@@ -58,8 +61,8 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
         }
     };
 
-    let query = "INSERT INTO Student (student_id, student_name, gender, birth_date, class_id, phone, email, password_hash) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    let query = "INSERT INTO Student (student_id, student_name, gender, birth_date, class_id, phone, email,password, password_hash) 
+             VALUES (?, ?, ?, ?, ?, ?, ?,?, ?)";
 
     match sqlx::query(query)
         .bind(student_id)
@@ -69,6 +72,7 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
         .bind(class_id)
         .bind(phone)
         .bind(email)
+        .bind(password)
         .bind(password_hash)
         .execute(&mut *conn)
         .await
@@ -86,6 +90,7 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
                     success: false,
                     message: Some("注册失败，未添加任何记录".to_string()),
                 }));
+                return;
             }
         }
         Err(e) => {
@@ -99,7 +104,7 @@ pub async fn get_register(req: &mut Request, depot: &mut Depot, res: &mut Respon
                 }
                 _ => format!("数据库错误: {}", e),
             };
-            
+
             res.status_code(salvo::http::StatusCode::BAD_REQUEST);
             res.render(Json(RegisterResponse {
                 success: false,

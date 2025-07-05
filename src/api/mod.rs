@@ -6,6 +6,7 @@ pub mod videos;
 pub mod courses;
 pub mod video_file;
 pub mod classes;
+pub mod admin;
 
 
 pub use login::*;
@@ -16,3 +17,4 @@ pub use videos::*;
 pub use courses::*;
 pub use video_file::*;
 pub use classes::*;
+pub use admin::*;
