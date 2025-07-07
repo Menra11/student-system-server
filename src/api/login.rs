@@ -2,7 +2,7 @@ use crate::model::*;
 use bcrypt::verify;
 use jsonwebtoken::{self, EncodingKey};
 use salvo::prelude::*;
-use sqlx::Row; // 添加 sqlx 相关的导入
+use sqlx::Row; 
 use time::{Duration, OffsetDateTime};
 
 #[handler]
@@ -28,6 +28,7 @@ pub async fn get_login(req: &mut Request, depot: &mut Depot, res: &mut Response)
     };
     
     dotenvy::dotenv().ok();
+    
     let secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "secret".to_string());
     let token = jsonwebtoken::encode(
         &jsonwebtoken::Header::default(),
