@@ -42,6 +42,11 @@ pub async fn upload_video_file(req: &mut Request, res: &mut Response) {
         title,
         name
     );
+    let file_url  = format!(
+        "{}-{}",
+        Local::now().timestamp().to_string(),
+        title
+    );
     let file_path = format!("{}/{}", UPLOAD_DIR.to_string(), file_name);
     let file_p = file_path.as_str();
 
@@ -62,7 +67,7 @@ pub async fn upload_video_file(req: &mut Request, res: &mut Response) {
             res.render(Json(VideoTitleResponse {
                 success: true,
                 message: Some("写入磁盘成功".to_string()),
-                file_name: Some(file_name),
+                file_name: Some(file_url),
             }));
         }
         Err(err) => res.render(Json(VideoTitleResponse {
@@ -79,7 +84,7 @@ pub async fn upload_video_file(req: &mut Request, res: &mut Response) {
 pub async fn del_video_file(req: &mut Request, res: &mut Response) {
     let url = req.query::<String>("url").unwrap();
 
-    let path = format!("{}/{}", UPLOAD_DIR, url);
+    let path = format!("{}/{}.mp4", UPLOAD_DIR, url);
     let p = path.as_str();
     // 如果路径存在就删除该文件
     if std::path::Path::new(p).exists() {
